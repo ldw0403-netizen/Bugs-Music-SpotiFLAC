@@ -1,7 +1,7 @@
 {
   "name": "bugs-music",
   "displayName": "Bugs Music",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Bugs Music metadata provider for SpotiFLAC Mobile.",
   "author": "ldw0403",
   "type": [
