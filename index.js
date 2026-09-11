@@ -13,8 +13,101 @@ function cleanText(text) {
     .replace(/&#39;/g, "'")
     .replace(/&lt;/g, "<")
     .replace(/&gt;/g, ">")
+    .replace(/&#x27;/g, "'")
+    .replace(/&#x2F;/g, "/")
     .replace(/\s+/g, " ")
     .trim();
+}
+
+function getFirstMatch(text, patterns) {
+  for (var i = 0; i < patterns.length; i++) {
+    var match = text.match(patterns[i]);
+
+    if (match && match[1]) {
+      return cleanText(match[1]);
+    }
+  }
+
+  return "";
+}
+
+function getTrackId(row) {
+  var patterns = [
+    /trackId["']?\s*[:=]\s*["']?(\d+)/i,
+    /track_id["']?\s*[:=]\s*["']?(\d+)/i,
+    /data-track-id=["'](\d+)["']/i,
+    /data-trackid=["'](\d+)["']/i,
+    /\/track\/(\d+)/i
+  ];
+
+  for (var i = 0; i < patterns.length; i++) {
+    var match = row.match(patterns[i]);
+
+    if (match && match[1]) {
+      return String(match[1]);
+    }
+  }
+
+  return "";
+}
+
+function parseTrackRow(row) {
+  var trackId = getTrackId(row);
+
+  var title = getFirstMatch(row, [
+    /class=["'][^"']*title[^"']*["'][^>]*>[\s\S]*?<a[^>]*>([\s\S]*?)<\/a>/i,
+    /class=["'][^"']*trackTitle[^"']*["'][^>]*>[\s\S]*?<a[^>]*>([\s\S]*?)<\/a>/i,
+    /class=["'][^"']*title[^"']*["'][^>]*>([\s\S]*?)<\/[^>]+>/i,
+    /title[^>]*>([\s\S]*?)<\/a>/i
+  ]);
+
+  var artist = getFirstMatch(row, [
+    /class=["'][^"']*artist[^"']*["'][^>]*>[\s\S]*?<a[^>]*>([\s\S]*?)<\/a>/i,
+    /class=["'][^"']*artistName[^"']*["'][^>]*>[\s\S]*?<a[^>]*>([\s\S]*?)<\/a>/i,
+    /artist[^>]*>([\s\S]*?)<\/a>/i
+  ]);
+
+  var album = getFirstMatch(row, [
+    /class=["'][^"']*album[^"']*["'][^>]*>[\s\S]*?<a[^>]*>([\s\S]*?)<\/a>/i,
+    /class=["'][^"']*albumName[^"']*["'][^>]*>[\s\S]*?<a[^>]*>([\s\S]*?)<\/a>/i,
+    /album[^>]*>([\s\S]*?)<\/a>/i
+  ]);
+
+  if (!trackId || !title) {
+    return null;
+  }
+
+  return {
+    id: trackId,
+    name: title,
+    artists: artist,
+    album_name: album,
+    provider_id: "bugs-music"
+  };
+}
+
+function parseTracks(html, limit) {
+  var tracks = [];
+  var seen = {};
+
+  var rows = html.match(/<tr[\s\S]*?<\/tr>/gi) || [];
+
+  for (var i = 0; i < rows.length && tracks.length < limit; i++) {
+    var track = parseTrackRow(rows[i]);
+
+    if (!track) {
+      continue;
+    }
+
+    if (seen[track.id]) {
+      continue;
+    }
+
+    seen[track.id] = true;
+    tracks.push(track);
+  }
+
+  return tracks;
 }
 
 function searchTracks(query, limit) {
@@ -32,52 +125,7 @@ function searchTracks(query, limit) {
     return [];
   }
 
-  var html = response.body || "";
-  var results = [];
-
-  var rows =
-    html.match(/<tr[\s\S]*?<\/tr>/gi) || [];
-
-  for (var i = 0; i < rows.length && results.length < limit; i++) {
-    var row = rows[i];
-
-    var idMatch =
-      row.match(/trackId["']?\s*[:=]\s*["']?(\d+)/i) ||
-      row.match(/\/track\/(\d+)/i) ||
-      row.match(/track\/(\d+)/i);
-
-    var titleMatch =
-      row.match(/class=["'][^"']*title[^"']*["'][^>]*>[\s\S]*?<a[^>]*>([\s\S]*?)<\/a>/i) ||
-      row.match(/title[^>]*>([\s\S]*?)<\/a>/i);
-
-    var artistMatch =
-      row.match(/class=["'][^"']*artist[^"']*["'][^>]*>[\s\S]*?<a[^>]*>([\s\S]*?)<\/a>/i) ||
-      row.match(/artist[^>]*>([\s\S]*?)<\/a>/i);
-
-    var albumMatch =
-      row.match(/class=["'][^"']*album[^"']*["'][^>]*>[\s\S]*?<a[^>]*>([\s\S]*?)<\/a>/i) ||
-      row.match(/album[^>]*>([\s\S]*?)<\/a>/i);
-
-    if (!idMatch || !titleMatch) {
-      continue;
-    }
-
-    var title = cleanText(titleMatch[1]);
-
-    if (!title) {
-      continue;
-    }
-
-    results.push({
-      id: String(idMatch[1]),
-      name: title,
-      artists: artistMatch ? cleanText(artistMatch[1]) : "",
-      album_name: albumMatch ? cleanText(albumMatch[1]) : "",
-      provider_id: "bugs-music"
-    });
-  }
-
-  return results;
+  return parseTracks(response.body || "", limit);
 }
 
 function getTrack(trackId) {
@@ -95,21 +143,27 @@ function getTrack(trackId) {
 
   var html = response.body || "";
 
-  var titleMatch =
-    html.match(/class=["'][^"']*title[^"']*["'][^>]*>[\s\S]*?<h1[^>]*>([\s\S]*?)<\/h1>/i) ||
-    html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i);
+  var title = getFirstMatch(html, [
+    /class=["'][^"']*title[^"']*["'][^>]*>[\s\S]*?<h1[^>]*>([\s\S]*?)<\/h1>/i,
+    /<h1[^>]*>([\s\S]*?)<\/h1>/i,
+    /class=["'][^"']*trackTitle[^"']*["'][^>]*>([\s\S]*?)<\/[^>]+>/i
+  ]);
 
-  var artistMatch =
-    html.match(/class=["'][^"']*artist[^"']*["'][^>]*>[\s\S]*?<a[^>]*>([\s\S]*?)<\/a>/i);
+  var artist = getFirstMatch(html, [
+    /class=["'][^"']*artist[^"']*["'][^>]*>[\s\S]*?<a[^>]*>([\s\S]*?)<\/a>/i,
+    /class=["'][^"']*artistName[^"']*["'][^>]*>([\s\S]*?)<\/a>/i
+  ]);
 
-  var albumMatch =
-    html.match(/class=["'][^"']*album[^"']*["'][^>]*>[\s\S]*?<a[^>]*>([\s\S]*?)<\/a>/i);
+  var album = getFirstMatch(html, [
+    /class=["'][^"']*album[^"']*["'][^>]*>[\s\S]*?<a[^>]*>([\s\S]*?)<\/a>/i,
+    /class=["'][^"']*albumName[^"']*["'][^>]*>([\s\S]*?)<\/a>/i
+  ]);
 
   return {
     id: String(trackId),
-    name: titleMatch ? cleanText(titleMatch[1]) : "",
-    artists: artistMatch ? cleanText(artistMatch[1]) : "",
-    album_name: albumMatch ? cleanText(albumMatch[1]) : "",
+    name: title,
+    artists: artist,
+    album_name: album,
     provider_id: "bugs-music",
     external_links: {
       bugs: url
@@ -119,7 +173,7 @@ function getTrack(trackId) {
 
 function getHomeFeed() {
   var response = http.get(
-    "https://music.bugs.co.kr/",
+    "https://music.bugs.co.kr/chart",
     {
       "User-Agent": "Mozilla/5.0"
     }
@@ -133,10 +187,17 @@ function getHomeFeed() {
     };
   }
 
+  var tracks = parseTracks(response.body || "", 100);
+
   return {
     success: true,
-    greeting: "Bugs Music",
-    sections: []
+    greeting: "Bugs TOP100",
+    sections: [
+      {
+        title: "Bugs TOP100",
+        tracks: tracks
+      }
+    ]
   };
 }
 
