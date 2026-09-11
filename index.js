@@ -95,9 +95,14 @@ function getTrack(trackId) {
   };
 }
 
+function getHomeFeed() {
+  return [];
+}
+
 registerExtension({
   initialize: initialize,
   cleanup: cleanup,
   searchTracks: searchTracks,
-  getTrack: getTrack
+  getTrack: getTrack,
+  getHomeFeed: getHomeFeed
 });
