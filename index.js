@@ -30,7 +30,34 @@ function cleanText(value) {
     .trim();
 }
 
-function getFirstMatch(text, patterns) {
+function absoluteUrl(url) {
+  if (!url) {
+    return "";
+  }
+
+  url = String(url)
+    .replace(/&amp;/gi, "&")
+    .trim();
+
+  if (url.indexOf("//") === 0) {
+    return "https:" + url;
+  }
+
+  if (
+    url.indexOf("http://") === 0 ||
+    url.indexOf("https://") === 0
+  ) {
+    return url;
+  }
+
+  if (url.indexOf("/") === 0) {
+    return BASE_URL + url;
+  }
+
+  return BASE_URL + "/" + url;
+}
+
+function firstMatch(text, patterns) {
   for (var i = 0; i < patterns.length; i++) {
     var match = text.match(patterns[i]);
 
@@ -42,93 +69,89 @@ function getFirstMatch(text, patterns) {
   return "";
 }
 
-function absoluteUrl(url) {
-  if (!url) {
-    return "";
-  }
+function getTrackId(row) {
+  return firstMatch(row, [
+    /data-track-id\s*=\s*["'](\d+)["']/i,
+    /data-trackid\s*=\s*["'](\d+)["']/i,
+    /trackId\s*=\s*["']?(\d+)/i,
+    /trackid\s*=\s*["']?(\d+)/i,
+    /track\/(\d+)/i,
+    /trackNo\s*=\s*["']?(\d+)/i
+  ]);
+}
 
-  url = String(url).trim();
+function getTrackName(row) {
+  return firstMatch(row, [
+    /class=["'][^"']*title[^"']*["'][^>]*>[\s\S]*?<a[^>]*>([\s\S]*?)<\/a>/i,
+    /class=["'][^"']*trackTitle[^"']*["'][^>]*>[\s\S]*?<a[^>]*>([\s\S]*?)<\/a>/i,
+    /class=["'][^"']*title[^"']*["'][^>]*>([\s\S]*?)<\/span>/i,
+    /class=["'][^"']*title[^"']*["'][^>]*>([\s\S]*?)<\/div>/i,
+    /class=["'][^"']*trackTitle[^"']*["'][^>]*>([\s\S]*?)<\/span>/i,
+    /title\s*=\s*["']([^"']+)["']/i
+  ]);
+}
 
-  if (url.indexOf("//") === 0) {
-    return "https:" + url;
-  }
+function getArtistName(row) {
+  return firstMatch(row, [
+    /class=["'][^"']*artist[^"']*["'][^>]*>[\s\S]*?<a[^>]*>([\s\S]*?)<\/a>/i,
+    /class=["'][^"']*artistName[^"']*["'][^>]*>[\s\S]*?<a[^>]*>([\s\S]*?)<\/a>/i,
+    /class=["'][^"']*artist[^"']*["'][^>]*>([\s\S]*?)<\/span>/i,
+    /class=["'][^"']*artist[^"']*["'][^>]*>([\s\S]*?)<\/div>/i
+  ]);
+}
 
-  if (url.indexOf("/") === 0) {
-    return BASE_URL + url;
-  }
-
-  if (url.indexOf("http://") === 0 || url.indexOf("https://") === 0) {
-    return url;
-  }
-
-  return BASE_URL + "/" + url;
+function getAlbumName(row) {
+  return firstMatch(row, [
+    /class=["'][^"']*album[^"']*["'][^>]*>[\s\S]*?<a[^>]*>([\s\S]*?)<\/a>/i,
+    /class=["'][^"']*albumName[^"']*["'][^>]*>[\s\S]*?<a[^>]*>([\s\S]*?)<\/a>/i,
+    /class=["'][^"']*album[^"']*["'][^>]*>([\s\S]*?)<\/span>/i,
+    /class=["'][^"']*album[^"']*["'][^>]*>([\s\S]*?)<\/div>/i
+  ]);
 }
 
 function getCoverUrl(row) {
   var patterns = [
-    /<img[^>]+(?:data-original|data-src|src)=["']([^"']+)["']/i,
-    /(?:data-original|data-src|src)=["']([^"']+)["']/i
+    /data-original\s*=\s*["']([^"']+)["']/i,
+    /data-src\s*=\s*["']([^"']+)["']/i,
+    /data-lazy\s*=\s*["']([^"']+)["']/i,
+    /data-image\s*=\s*["']([^"']+)["']/i,
+    /data-cover\s*=\s*["']([^"']+)["']/i,
+    /data-album-img\s*=\s*["']([^"']+)["']/i,
+    /src\s*=\s*["']([^"']+)["']/i,
+    /srcset\s*=\s*["']([^"']+)["']/i,
+    /background-image\s*:\s*url\(["']?([^"')]+)["']?\)/i,
+    /url\(["']?([^"')]+)["']?\)/i
   ];
 
   for (var i = 0; i < patterns.length; i++) {
     var match = row.match(patterns[i]);
 
-    if (match && match[1]) {
-      var url = match[1]
-        .replace(/&amp;/gi, "&")
-        .trim();
-
-      if (
-        url.indexOf(".jpg") >= 0 ||
-        url.indexOf(".jpeg") >= 0 ||
-        url.indexOf(".png") >= 0 ||
-        url.indexOf(".webp") >= 0 ||
-        url.indexOf("image") >= 0 ||
-        url.indexOf("album") >= 0
-      ) {
-        return absoluteUrl(url);
-      }
+    if (!match || !match[1]) {
+      continue;
     }
+
+    var url = match[1]
+      .split(",")[0]
+      .trim()
+      .split(" ")[0]
+      .replace(/&amp;/gi, "&");
+
+    if (!url) {
+      continue;
+    }
+
+    if (
+      url.indexOf("data:image") === 0 ||
+      url.indexOf("blank.gif") >= 0 ||
+      url.indexOf("transparent") >= 0
+    ) {
+      continue;
+    }
+
+    return absoluteUrl(url);
   }
 
   return "";
-}
-
-function getTrackId(row) {
-  return getFirstMatch(row, [
-    /trackId["'\s:=]+["']?(\d+)/i,
-    /trackid["'\s:=]+["']?(\d+)/i,
-    /data-track-id=["'](\d+)["']/i,
-    /track\/(\d+)/i,
-    /\/track\/(\d+)/i
-  ]);
-}
-
-function getTrackName(row) {
-  return getFirstMatch(row, [
-    /class=["'][^"']*title[^"']*["'][^>]*>[\s\S]*?<a[^>]*>([\s\S]*?)<\/a>/i,
-    /class=["'][^"']*title[^"']*["'][^>]*>([\s\S]*?)<\/span>/i,
-    /class=["'][^"']*title[^"']*["'][^>]*>([\s\S]*?)<\/div>/i,
-    /class=["'][^"']*trackTitle[^"']*["'][^>]*>([\s\S]*?)<\/a>/i,
-    /title=["']([^"']+)["']/i
-  ]);
-}
-
-function getArtistName(row) {
-  return getFirstMatch(row, [
-    /class=["'][^"']*artist[^"']*["'][^>]*>[\s\S]*?<a[^>]*>([\s\S]*?)<\/a>/i,
-    /class=["'][^"']*artist[^"']*["'][^>]*>([\s\S]*?)<\/span>/i,
-    /class=["'][^"']*artist[^"']*["'][^>]*>([\s\S]*?)<\/div>/i,
-    /class=["'][^"']*artistName[^"']*["'][^>]*>([\s\S]*?)<\/a>/i
-  ]);
-}
-
-function getAlbumName(row) {
-  return getFirstMatch(row, [
-    /class=["'][^"']*album[^"']*["'][^>]*>[\s\S]*?<a[^>]*>([\s\S]*?)<\/a>/i,
-    /class=["'][^"']*album[^"']*["'][^>]*>([\s\S]*?)<\/span>/i,
-    /class=["'][^"']*album[^"']*["'][^>]*>([\s\S]*?)<\/div>/i
-  ]);
 }
 
 function parseTrackRow(row) {
@@ -169,7 +192,11 @@ function parseTracks(html) {
   for (var i = 0; i < rows.length; i++) {
     var track = parseTrackRow(rows[i]);
 
-    if (!track || !track.id || seen[track.id]) {
+    if (!track || !track.id) {
+      continue;
+    }
+
+    if (seen[track.id]) {
       continue;
     }
 
@@ -178,12 +205,18 @@ function parseTracks(html) {
   }
 
   if (tracks.length === 0) {
-    var fallbackBlocks = html.match(/<div[\s\S]*?(?:track|song)[\s\S]*?<\/div>/gi) || [];
+    var blocks = html.match(
+      /<(?:li|div)[^>]*(?:track|song|album)[^>]*>[\s\S]*?<\/(?:li|div)>/gi
+    ) || [];
 
-    for (var j = 0; j < fallbackBlocks.length; j++) {
-      var fallbackTrack = parseTrackRow(fallbackBlocks[j]);
+    for (var j = 0; j < blocks.length; j++) {
+      var fallbackTrack = parseTrackRow(blocks[j]);
 
-      if (!fallbackTrack || !fallbackTrack.id || seen[fallbackTrack.id]) {
+      if (!fallbackTrack || !fallbackTrack.id) {
+        continue;
+      }
+
+      if (seen[fallbackTrack.id]) {
         continue;
       }
 
@@ -197,8 +230,8 @@ function parseTracks(html) {
 
 function makeTrackResult(track) {
   return {
-    id: track.id,
-    uri: "bugs:track:" + track.id,
+    id: String(track.id),
+    uri: "bugs:track:" + String(track.id),
     type: "track",
     name: track.name || "",
     artists: track.artists || "",
@@ -220,25 +253,30 @@ function searchTracks(query) {
     };
   }
 
-  var keyword = encodeURIComponent(String(query).trim());
-  var url = BASE_URL + "/search/track?q=" + keyword;
+  var url =
+    BASE_URL +
+    "/search/track?q=" +
+    encodeURIComponent(String(query).trim());
 
-  return fetch(url).then(function(response) {
-    return response.text();
-  }).then(function(html) {
-    var tracks = parseTracks(html);
+  return fetch(url)
+    .then(function(response) {
+      return response.text();
+    })
+    .then(function(html) {
+      var tracks = parseTracks(html);
 
-    return {
-      success: true,
-      tracks: tracks.map(makeTrackResult)
-    };
-  }).catch(function(error) {
-    return {
-      success: false,
-      error: String(error),
-      tracks: []
-    };
-  });
+      return {
+        success: true,
+        tracks: tracks.map(makeTrackResult)
+      };
+    })
+    .catch(function(error) {
+      return {
+        success: false,
+        error: String(error),
+        tracks: []
+      };
+    });
 }
 
 function getTrack(trackId) {
@@ -255,62 +293,50 @@ function getTrack(trackId) {
 
   var url = BASE_URL + "/track/" + id;
 
-  return fetch(url).then(function(response) {
-    return response.text();
-  }).then(function(html) {
-    var tracks = parseTracks(html);
-    var track = tracks.length > 0 ? tracks[0] : null;
+  return fetch(url)
+    .then(function(response) {
+      return response.text();
+    })
+    .then(function(html) {
+      var tracks = parseTracks(html);
+      var track = tracks.length > 0 ? tracks[0] : null;
 
-    if (!track) {
-      track = {
-        id: id,
-        name: "Bugs Track " + id,
-        artists: "",
-        album_name: "",
-        cover_url: ""
+      if (!track) {
+        track = {
+          id: id,
+          name: "Bugs Track " + id,
+          artists: "",
+          album_name: "",
+          cover_url: ""
+        };
+      }
+
+      return {
+        success: true,
+        track: makeTrackResult(track)
       };
-    }
-
-    return {
-      success: true,
-      track: makeTrackResult(track)
-    };
-  }).catch(function(error) {
-    return {
-      success: false,
-      error: String(error)
-    };
-  });
-}
-
-function fetchChart(url) {
-  return fetch(url).then(function(response) {
-    return response.text();
-  }).then(function(html) {
-    return parseTracks(html);
-  }).catch(function() {
-    return [];
-  });
+    })
+    .catch(function(error) {
+      return {
+        success: false,
+        error: String(error)
+      };
+    });
 }
 
 function getChartTracks() {
-  var urls = [
-    BASE_URL + "/chart",
-    BASE_URL + "/chart/track/realtime/total",
-    BASE_URL + "/chart/track/total"
-  ];
+  var url = BASE_URL + "/chart/track/realtime/total";
 
-  return Promise.all([
-    fetchChart(urls[0]),
-    fetchChart(urls[1]),
-    fetchChart(urls[2])
-  ]).then(function(results) {
-    return {
-      top100: results[0],
-      realtime: results[1],
-      total: results[2]
-    };
-  });
+  return fetch(url)
+    .then(function(response) {
+      return response.text();
+    })
+    .then(function(html) {
+      return parseTracks(html);
+    })
+    .catch(function() {
+      return [];
+    });
 }
 
 function makeSection(uri, title, tracks) {
@@ -321,208 +347,29 @@ function makeSection(uri, title, tracks) {
   };
 }
 
-function makeLinkItem(id, title, url) {
-  return {
-    id: id,
-    uri: url,
-    type: "playlist",
-    name: title,
-    artists: "Bugs Music",
-    album_name: title,
-    cover_url: "",
-    provider_id: PROVIDER_ID
-  };
-}
-
-function makeCategorySection(title, items) {
-  return {
-    uri: "bugs:category:" + encodeURIComponent(title),
-    title: title,
-    items: items
-  };
-}
-
 function getHomeFeed() {
-  return getChartTracks().then(function(chartData) {
-    var sections = [];
-
-    sections.push(
-      makeSection(
-        "bugs:chart:top100",
-        "벅스 차트 TOP100",
-        chartData.top100
-      )
-    );
-
-    sections.push(
-      makeSection(
-        "bugs:chart:realtime",
-        "벅스 실시간 차트",
-        chartData.realtime
-      )
-    );
-
-    sections.push(
-      makeSection(
-        "bugs:chart:total",
-        "벅스 전체 차트",
-        chartData.total
-      )
-    );
-
-    sections.push(
-      makeCategorySection("최신음악", [
-        makeLinkItem(
-          "latest-all",
-          "최신음악 전체",
-          BASE_URL + "/newest"
-        ),
-        makeLinkItem(
-          "latest-domestic",
-          "최신음악 국내",
-          BASE_URL + "/newest/track/domestic"
-        ),
-        makeLinkItem(
-          "latest-overseas",
-          "최신음악 해외",
-          BASE_URL + "/newest/track/overseas"
-        ),
-        makeLinkItem(
-          "latest-other",
-          "최신음악 기타",
-          BASE_URL + "/newest/track/etc"
-        )
-      ])
-    );
-
-    sections.push(
-      makeCategorySection("장르 선택", [
-        makeLinkItem(
-          "genre-all",
-          "전체 장르",
-          BASE_URL + "/genre"
-        ),
-        makeLinkItem(
-          "genre-domestic",
-          "국내 장르",
-          BASE_URL + "/genre/domestic"
-        ),
-        makeLinkItem(
-          "genre-overseas",
-          "해외 장르",
-          BASE_URL + "/genre/overseas"
-        ),
-        makeLinkItem(
-          "genre-other",
-          "기타 장르",
-          BASE_URL + "/genre/etc"
-        )
-      ])
-    );
-
-    sections.push(
-      makeCategorySection("Essential", [
-        makeLinkItem(
-          "essential",
-          "Essential",
-          BASE_URL + "/essential"
-        )
-      ])
-    );
-
-    sections.push(
-      makeCategorySection("뮤직PD", [
-        makeLinkItem(
-          "music-pd",
-          "뮤직PD",
-          BASE_URL + "/musicpd"
-        )
-      ])
-    );
-
-    sections.push(
-      makeCategorySection("연도별 음악", [
-        makeLinkItem(
-          "year-music",
-          "연도별 음악",
-          BASE_URL + "/year"
-        )
-      ])
-    );
-
-    sections.push(
-      makeCategorySection("Favorite", [
-        makeLinkItem(
-          "favorite",
-          "Favorite",
-          BASE_URL + "/favorite"
-        )
-      ])
-    );
-
-    sections.push(
-      makeCategorySection("투표", [
-        makeLinkItem(
-          "vote",
-          "투표",
-          BASE_URL + "/vote"
-        )
-      ])
-    );
-
-    sections.push(
-      makeCategorySection("하트충전소", [
-        makeLinkItem(
-          "heart",
-          "하트충전소",
-          BASE_URL + "/heart"
-        )
-      ])
-    );
-
-    sections.push(
-      makeCategorySection("라디오", [
-        makeLinkItem(
-          "radio",
-          "라디오",
-          BASE_URL + "/radio"
-        )
-      ])
-    );
-
-    sections.push(
-      makeCategorySection("뮤직포스트", [
-        makeLinkItem(
-          "music-post",
-          "뮤직포스트",
-          BASE_URL + "/musicpost"
-        )
-      ])
-    );
-
-    sections.push(
-      makeCategorySection("커넥트", [
-        makeLinkItem(
-          "connect",
-          "커넥트",
-          BASE_URL + "/connect"
-        )
-      ])
-    );
-
-    return {
-      success: true,
-      greeting: "Bugs Music",
-      sections: sections
-    };
-  }).catch(function(error) {
-    return {
-      success: false,
-      error: String(error),
-      greeting: "Bugs Music",
-      sections: []
-    };
-  });
+  return getChartTracks()
+    .then(function(tracks) {
+      return {
+        success: true,
+        greeting: "Bugs Music",
+        sections: [
+          makeSection(
+            "bugs:chart:realtime",
+            "벅스 실시간 차트",
+            tracks
+          )
+        ]
+      };
+    })
+    .catch(function(error) {
+      return {
+        success: false,
+        error: String(error),
+        greeting: "Bugs Music",
+        sections: []
+      };
+    });
 }
 
 registerExtension({
