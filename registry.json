@@ -6,8 +6,8 @@
       "id": "bugs-music",
       "name": "bugs-music",
       "display_name": "Bugs Music",
-      "version": "1.0.7",
-      "description": "Bugs Music metadata search and home feed with charts, latest music, categories and cover images.",
+      "version": "1.0.8",
+      "description": "Bugs Music metadata search and home feed with chart tracks and cover images.",
       "download_url": "https://raw.githubusercontent.com/ldw0403-netizen/Bugs-Music-SpotiFLAC/main/bugs-music.spotiflac-ext",
       "category": "metadata_provider",
       "tags": [
@@ -17,9 +17,7 @@
         "homefeed",
         "chart",
         "top100",
-        "latest",
-        "essential",
-        "radio"
+        "latest"
       ],
       "min_app_version": "4.9.1"
     }
