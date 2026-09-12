@@ -151,12 +151,12 @@ function getTrack(trackId) {
 
   var artist = getFirstMatch(html, [
     /class=["'][^"']*artist[^"']*["'][^>]*>[\s\S]*?<a[^>]*>([\s\S]*?)<\/a>/i,
-    /class=["'][^"']*artistName[^"']*["'][^>]*>([\s\S]*?)<\/a>/i
+    /class=["'][^"']*artistName[^"']*["'][^>]*>[\s\S]*?<a[^>]*>([\s\S]*?)<\/a>/i
   ]);
 
   var album = getFirstMatch(html, [
     /class=["'][^"']*album[^"']*["'][^>]*>[\s\S]*?<a[^>]*>([\s\S]*?)<\/a>/i,
-    /class=["'][^"']*albumName[^"']*["'][^>]*>([\s\S]*?)<\/a>/i
+    /class=["'][^"']*albumName[^"']*["'][^>]*>[\s\S]*?<a[^>]*>([\s\S]*?)<\/a>/i
   ]);
 
   return {
@@ -172,26 +172,33 @@ function getTrack(trackId) {
 }
 
 function getHomeFeed() {
-  var response = http.get(
+  var chartUrls = [
     "https://music.bugs.co.kr/chart",
-    {
+    "https://music.bugs.co.kr/chart/track/realtime/total",
+    "https://music.bugs.co.kr/chart/track/total"
+  ];
+
+  var tracks = [];
+
+  for (var i = 0; i < chartUrls.length; i++) {
+    var response = http.get(chartUrls[i], {
       "User-Agent": "Mozilla/5.0"
+    });
+
+    if (!response || !response.ok) {
+      continue;
     }
-  );
 
-  if (!response || !response.ok) {
-    return {
-      success: true,
-      greeting: "Bugs Music",
-      sections: []
-    };
+    tracks = parseTracks(response.body || "", 100);
+
+    if (tracks.length > 0) {
+      break;
+    }
   }
-
-  var tracks = parseTracks(response.body || "", 100);
 
   return {
     success: true,
-    greeting: "Bugs TOP100",
+    greeting: "Bugs Music",
     sections: [
       {
         title: "Bugs TOP100",
