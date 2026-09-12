@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "extensions": [
+    {
+      "id": "bugs-music",
+      "name": "Bugs Music",
+      "version": "1.1.2",
+      "displayName": "Bugs Music",
+      "file": "extensions/bugs-music.spotiflac-ext",
+      "icon": "icons/bugs-music.png"
+    }
+  ]
+}
