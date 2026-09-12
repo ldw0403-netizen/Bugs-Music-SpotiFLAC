@@ -7,6 +7,9 @@
   "type": [
     "metadata_provider"
   ],
+  "capabilities": {
+    "homeFeed": true
+  },
   "minAppVersion": "4.9.1",
   "permissions": {
     "network": [
