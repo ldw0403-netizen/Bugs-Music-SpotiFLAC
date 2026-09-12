@@ -183,45 +183,68 @@ function makeHomeFeedItem(track) {
   };
 }
 
-function getHomeFeed() {
-  var chartUrls = [
-    "https://music.bugs.co.kr/chart",
-    "https://music.bugs.co.kr/chart/track/realtime/total",
-    "https://music.bugs.co.kr/chart/track/total"
-  ];
+function getChartTracks(url, limit) {
+  var response = http.get(url, {
+    "User-Agent": "Mozilla/5.0"
+  });
 
-  var tracks = [];
-
-  for (var i = 0; i < chartUrls.length; i++) {
-    var response = http.get(chartUrls[i], {
-      "User-Agent": "Mozilla/5.0"
-    });
-
-    if (!response || !response.ok) {
-      continue;
-    }
-
-    tracks = parseTracks(response.body || "", 100);
-
-    if (tracks.length > 0) {
-      break;
-    }
+  if (!response || !response.ok) {
+    return [];
   }
 
-  var items = [];
+  return parseTracks(response.body || "", limit);
+}
 
-  for (var j = 0; j < tracks.length; j++) {
-    items.push(makeHomeFeedItem(tracks[j]));
+function getHomeFeed() {
+  var top100 = getChartTracks(
+    "https://music.bugs.co.kr/chart",
+    100
+  );
+
+  var realtime = getChartTracks(
+    "https://music.bugs.co.kr/chart/track/realtime/total",
+    20
+  );
+
+  var total = getChartTracks(
+    "https://music.bugs.co.kr/chart/track/total",
+    20
+  );
+
+  var top100Items = [];
+  var realtimeItems = [];
+  var totalItems = [];
+
+  for (var i = 0; i < top100.length; i++) {
+    top100Items.push(makeHomeFeedItem(top100[i]));
+  }
+
+  for (var j = 0; j < realtime.length; j++) {
+    realtimeItems.push(makeHomeFeedItem(realtime[j]));
+  }
+
+  for (var k = 0; k < total.length; k++) {
+    totalItems.push(makeHomeFeedItem(total[k]));
   }
 
   return {
     success: true,
-    greeting: "Bugs TOP100",
+    greeting: "Bugs Music",
     sections: [
       {
         uri: "bugs:top100",
         title: "Bugs TOP100",
-        items: items
+        items: top100Items
+      },
+      {
+        uri: "bugs:realtime",
+        title: "Bugs 실시간 차트",
+        items: realtimeItems
+      },
+      {
+        uri: "bugs:total",
+        title: "Bugs 전체 차트",
+        items: totalItems
       }
     ]
   };
