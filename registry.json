@@ -1,0 +1,12 @@
+[
+  {
+    "name": "bugs-music",
+    "displayName": "Bugs Music",
+    "version": "1.1.0",
+    "description": "Bugs Music metadata provider with chart, latest music, search, and Home Feed support.",
+    "author": "ldw0403-netizen",
+    "homepage": "https://github.com/ldw0403-netizen/Bugs-Music-SpotiFLAC",
+    "downloadUrl": "https://raw.githubusercontent.com/ldw0403-netizen/Bugs-Music-SpotiFLAC/main/extensions/bugs-music.spotiflac-ext",
+    "iconUrl": "https://raw.githubusercontent.com/ldw0403-netizen/Bugs-Music-SpotiFLAC/main/icons/bugs-music.png"
+  }
+]
