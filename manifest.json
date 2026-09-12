@@ -1,23 +1,40 @@
 {
   "name": "bugs-music",
-  "displayName": "Bugs Music",
+  "displayName": "벅스뮤직",
   "version": "1.1.3",
-  "description": "Bugs Music 검색, 메타데이터 및 공개 홈피드 확장",
-  "author": "ldw0403-netizen",
-  "homepage": "https://github.com/ldw0403-netizen/Bugs-Music-SpotiFLAC",
-  "icon": "icon.png",
+  "description": "Bugs Music metadata/search provider for SpotiFLAC Mobile.",
+  "author": "Community",
+  "homepage": "https://music.bugs.co.kr",
   "permissions": {
     "network": [
       "music.bugs.co.kr",
-      "image.bugsm.co.kr"
-    ]
+      "api.song.link"
+    ],
+    "storage": true
   },
   "type": [
     "metadata_provider"
   ],
-  "capabilities": {
-    "homeFeed": true
-  },
   "skipMetadataEnrichment": false,
-  "skipBuiltInFallback": false
+  "skipBuiltInFallback": false,
+  "searchBehavior": {
+    "enabled": true,
+    "primary": false,
+    "placeholder": "벅스뮤직 검색...",
+    "thumbnailRatio": "square",
+    "filters": [
+      {
+        "id": "track",
+        "label": "곡"
+      },
+      {
+        "id": "album",
+        "label": "앨범"
+      },
+      {
+        "id": "artist",
+        "label": "아티스트"
+      }
+    ]
+  }
 }
