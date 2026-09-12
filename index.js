@@ -227,7 +227,7 @@ function getHomeFeed() {
   };
 }
 
-register({
+registerExtension({
   initialize: initialize,
   cleanup: cleanup,
   searchTracks: searchTracks,
