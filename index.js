@@ -99,10 +99,6 @@ function getArtistName(row) {
   ]);
 }
 
-function getAlbumId(row) {
-  return firstMatch(row, [/href=["'][^"']*\/album\/(\d+)[^"']*["']/i, /data-album-id\s*=\s*["'](\d+)["']/i]);
-}
-
 function getAlbumName(row) {
   return firstMatch(row, [
     /<a[^>]*class=["'][^"']*\balbum\b[^"']*["'][^>]*>([\s\S]*?)<\/a>/i,
@@ -162,9 +158,7 @@ function parseTrackRow(row) {
   var name = getTrackName(row);
   var artists = getArtistName(row);
   var albumName = getAlbumName(row);
-  var albumId = getAlbumId(row);
   var coverUrl = getCoverUrl(row);
-  coverUrl = coverUrl.replace(/\/(?:[0-9]{2,4})x(?:[0-9]{2,4})\//, "/original/").replace(/_[0-9]{2,4}x[0-9]{2,4}(?=\.)/, "");
 
   if (!name) {
     name = "Bugs Track " + id;
@@ -175,7 +169,6 @@ function parseTrackRow(row) {
     name: name,
     artists: artists,
     album_name: albumName,
-    album_id: albumId,
     cover_url: coverUrl
   };
 }
@@ -260,8 +253,6 @@ function makeTrackResult(track) {
     name: track.name || "",
     artists: track.artists || "",
     album_name: track.album_name || "",
-    album_id: track.album_id || "",
-    album_uri: track.album_id ? "bugs:album:" + String(track.album_id) : "",
     cover_url: track.cover_url || "",
     provider_id: PROVIDER_ID
   };
