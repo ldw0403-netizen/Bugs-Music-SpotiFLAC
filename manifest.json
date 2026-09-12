@@ -1,8 +1,8 @@
 {
   "name": "bugs-music",
   "displayName": "Bugs Music",
-  "version": "1.0.6",
-  "description": "Bugs Music metadata provider and home feed.",
+  "version": "1.0.7",
+  "description": "Bugs Music metadata search and home feed with charts, latest music, categories and cover images.",
   "author": "ldw0403",
   "homepage": "https://github.com/ldw0403-netizen/Bugs-Music-SpotiFLAC",
   "type": [
@@ -11,10 +11,10 @@
   "capabilities": {
     "homeFeed": true
   },
-  "minAppVersion": "4.9.1",
   "permissions": {
     "network": [
       "music.bugs.co.kr"
     ]
-  }
+  },
+  "minAppVersion": "4.9.1"
 }
