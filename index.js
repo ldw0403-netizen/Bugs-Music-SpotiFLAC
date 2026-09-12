@@ -1,7 +1,5 @@
 var BASE_URL = "https://music.bugs.co.kr";
 var PROVIDER_ID = "bugs-music";
-var MAX_HOME_TRACKS = 30;
-var MAX_SEARCH_TRACKS = 50;
 
 function initialize() {
   return {
@@ -21,19 +19,13 @@ function cleanText(value) {
   }
 
   return String(value)
-    .replace(/<script[\s\S]*?<\/script>/gi, "")
-    .replace(/<style[\s\S]*?<\/style>/gi, "")
     .replace(/<[^>]*>/g, "")
     .replace(/&nbsp;/gi, " ")
     .replace(/&amp;/gi, "&")
     .replace(/&quot;/gi, '"')
     .replace(/&#39;/gi, "'")
-    .replace(/&#x27;/gi, "'")
     .replace(/&lt;/gi, "<")
     .replace(/&gt;/gi, ">")
-    .replace(/&#(\d+);/g, function(_, code) {
-      return String.fromCharCode(Number(code));
-    })
     .replace(/\s+/g, " ")
     .trim();
 }
@@ -43,41 +35,31 @@ function absoluteUrl(url) {
     return "";
   }
 
-  var value = String(url)
+  url = String(url)
     .replace(/&amp;/gi, "&")
-    .replace(/\\u002F/g, "/")
-    .replace(/\\\//g, "/")
     .trim();
 
-  if (
-    value.indexOf("data:image") === 0 ||
-    value.indexOf("javascript:") === 0 ||
-    value.indexOf("#") === 0
-  ) {
-    return "";
-  }
-
-  if (value.indexOf("//") === 0) {
-    return "https:" + value;
+  if (url.indexOf("//") === 0) {
+    return "https:" + url;
   }
 
   if (
-    value.indexOf("http://") === 0 ||
-    value.indexOf("https://") === 0
+    url.indexOf("http://") === 0 ||
+    url.indexOf("https://") === 0
   ) {
-    return value;
+    return url;
   }
 
-  if (value.indexOf("/") === 0) {
-    return BASE_URL + value;
+  if (url.indexOf("/") === 0) {
+    return BASE_URL + url;
   }
 
-  return BASE_URL + "/" + value;
+  return BASE_URL + "/" + url;
 }
 
 function firstMatch(text, patterns) {
   for (var i = 0; i < patterns.length; i++) {
-    var match = String(text || "").match(patterns[i]);
+    var match = text.match(patterns[i]);
 
     if (match && match[1]) {
       return cleanText(match[1]);
@@ -87,212 +69,177 @@ function firstMatch(text, patterns) {
   return "";
 }
 
-function getTrackId(text) {
-  return firstMatch(text, [
-    /data-track-id\s*=\s*["']?(\d+)/i,
-    /data-trackid\s*=\s*["']?(\d+)/i,
-    /data-track-no\s*=\s*["']?(\d+)/i,
-    /data-trackno\s*=\s*["']?(\d+)/i,
-    /data-song-id\s*=\s*["']?(\d+)/i,
-    /data-songid\s*=\s*["']?(\d+)/i,
-    /data-content-id\s*=\s*["']?(\d+)/i,
-    /trackId\s*[:=]\s*["']?(\d+)/i,
-    /track_id\s*[:=]\s*["']?(\d+)/i,
-    /trackid\s*[:=]\s*["']?(\d+)/i,
-    /trackNo\s*[:=]\s*["']?(\d+)/i,
-    /songId\s*[:=]\s*["']?(\d+)/i,
-    /song_id\s*[:=]\s*["']?(\d+)/i,
-    /\/track\/(\d+)/i,
-    /track\/(\d+)/i,
-    /trackNo=(\d+)/i,
-    /trackId=(\d+)/i
+function getTrackId(row) {
+  return firstMatch(row, [
+    /href=["'][^"']*\/track\/(\d+)[^"']*["']/i,
+    /data-track-id\s*=\s*["'](\d+)["']/i,
+    /data-trackid\s*=\s*["'](\d+)["']/i,
+    /trackId\s*=\s*["']?(\d+)/i,
+    /trackid\s*=\s*["']?(\d+)/i,
+    /trackNo\s*=\s*["']?(\d+)/i
   ]);
 }
 
-function getTrackName(block) {
-  return firstMatch(block, [
-    /class=["'][^"']*(?:trackTitle|track_title|title)[^"']*["'][^>]*>[\s\S]*?<a[^>]*>([\s\S]*?)<\/a>/i,
-    /class=["'][^"']*(?:trackTitle|track_title|title)[^"']*["'][^>]*>([\s\S]*?)<\/(?:span|div|p|strong)>/i,
-    /class=["'][^"']*songname[^"']*["'][^>]*>([\s\S]*?)<\/(?:span|div|a)>/i,
-    /class=["'][^"']*song_name[^"']*["'][^>]*>([\s\S]*?)<\/(?:span|div|a)>/i,
-    /class=["'][^"']*name[^"']*["'][^>]*>[\s\S]*?<a[^>]*>([\s\S]*?)<\/a>/i,
-    /title=["']([^"']+)["']/i,
-    /data-title=["']([^"']+)["']/i,
-    /data-song-name=["']([^"']+)["']/i
+function getTrackName(row) {
+  return firstMatch(row, [
+    /<p[^>]*class=["'][^"']*\btitle\b[^"']*["'][^>]*>[\s\S]*?<a[^>]*>([\s\S]*?)<\/a>/i,
+    /<a[^>]*class=["'][^"']*\btitle\b[^"']*["'][^>]*>([\s\S]*?)<\/a>/i,
+    /class=["'][^"']*trackTitle[^"']*["'][^>]*>[\s\S]*?<a[^>]*>([\s\S]*?)<\/a>/i,
+    /class=["'][^"']*title[^"']*["'][^>]*>([\s\S]*?)<\/span>/i,
+    /title\s*=\s*["']([^"']+)["']/i
   ]);
 }
 
-function getArtistName(block) {
-  return firstMatch(block, [
-    /class=["'][^"']*(?:artistName|artist_name|artist)[^"']*["'][^>]*>[\s\S]*?<a[^>]*>([\s\S]*?)<\/a>/i,
-    /class=["'][^"']*(?:artistName|artist_name|artist)[^"']*["'][^>]*>([\s\S]*?)<\/(?:span|div|p)>/i,
-    /data-artist-name=["']([^"']+)["']/i,
-    /data-artist=["']([^"']+)["']/i
+function getArtistName(row) {
+  return firstMatch(row, [
+    /<p[^>]*class=["'][^"']*\bartist\b[^"']*["'][^>]*>[\s\S]*?<a[^>]*>([\s\S]*?)<\/a>/i,
+    /<p[^>]*class=["'][^"']*artistName[^"']*["'][^>]*>[\s\S]*?<a[^>]*>([\s\S]*?)<\/a>/i,
+    /class=["'][^"']*artist[^"']*["'][^>]*>[\s\S]*?<a[^>]*>([\s\S]*?)<\/a>/i,
+    /class=["'][^"']*artist[^"']*["'][^>]*>([\s\S]*?)<\/span>/i
   ]);
 }
 
-function getAlbumName(block) {
-  return firstMatch(block, [
-    /class=["'][^"']*(?:albumName|album_name|album)[^"']*["'][^>]*>[\s\S]*?<a[^>]*>([\s\S]*?)<\/a>/i,
-    /class=["'][^"']*(?:albumName|album_name|album)[^"']*["'][^>]*>([\s\S]*?)<\/(?:span|div|p)>/i,
-    /data-album-name=["']([^"']+)["']/i,
-    /data-album=["']([^"']+)["']/i
+function getAlbumName(row) {
+  return firstMatch(row, [
+    /<a[^>]*class=["'][^"']*\balbum\b[^"']*["'][^>]*>([\s\S]*?)<\/a>/i,
+    /class=["'][^"']*albumName[^"']*["'][^>]*>[\s\S]*?<a[^>]*>([\s\S]*?)<\/a>/i,
+    /class=["'][^"']*album[^"']*["'][^>]*>([\s\S]*?)<\/span>/i
   ]);
 }
 
-function getCoverUrl(block) {
+function getCoverUrl(row) {
   var patterns = [
-    /data-original\s*=\s*["']([^"']+)["']/i,
-    /data-original-src\s*=\s*["']([^"']+)["']/i,
-    /data-src\s*=\s*["']([^"']+)["']/i,
-    /data-lazy-src\s*=\s*["']([^"']+)["']/i,
-    /data-lazy\s*=\s*["']([^"']+)["']/i,
-    /data-image\s*=\s*["']([^"']+)["']/i,
-    /data-cover\s*=\s*["']([^"']+)["']/i,
-    /data-album-img\s*=\s*["']([^"']+)["']/i,
-    /data-album-image\s*=\s*["']([^"']+)["']/i,
-    /data-thumbnail\s*=\s*["']([^"']+)["']/i,
-    /srcset\s*=\s*["']([^"']+)["']/i,
-    /src\s*=\s*["']([^"']+)["']/i,
-    /background-image\s*:\s*url\(["']?([^"')]+)["']?\)/i,
-    /"image"\s*:\s*"([^"]+)"/i,
-    /"imageUrl"\s*:\s*"([^"]+)"/i,
-    /"albumImage"\s*:\s*"([^"]+)"/i
+    /<a[^>]*class=["'][^"']*thumbnail[^"']*["'][^>]*>[\s\S]*?<img[^>]*src=["']([^"']+)["']/i,
+    /<a[^>]*class=["'][^"']*thumbnail[^"']*["'][^>]*>[\s\S]*?<img[^>]*data-original=["']([^"']+)["']/i,
+    /<img[^>]*data-original=["']([^"']+)["']/i,
+    /<img[^>]*data-src=["']([^"']+)["']/i,
+    /<img[^>]*src=["']([^"']+)["']/i,
+    /background-image\s*:\s*url\(["']?([^"')]+)["']?\)/i
   ];
 
   for (var i = 0; i < patterns.length; i++) {
-    var match = String(block || "").match(patterns[i]);
+    var match = row.match(patterns[i]);
 
     if (!match || !match[1]) {
       continue;
     }
 
-    var value = match[1]
-      .replace(/\\u002F/g, "/")
-      .replace(/\\\//g, "/")
+    var url = match[1]
+      .replace(/&amp;/gi, "&")
       .split(",")[0]
       .trim()
-      .split(/\s+/)[0];
+      .split(" ")[0];
+
+    if (!url) {
+      continue;
+    }
 
     if (
-      !value ||
-      value.indexOf("data:image") === 0 ||
-      value.indexOf("blank.gif") >= 0 ||
-      value.indexOf("transparent") >= 0 ||
-      value.indexOf("spacer") >= 0
+      url.indexOf("data:image") === 0 ||
+      url.indexOf("blank.gif") >= 0 ||
+      url.indexOf("transparent") >= 0
     ) {
       continue;
     }
 
-    return absoluteUrl(value);
+    return absoluteUrl(url);
   }
 
   return "";
 }
 
-function parseTrackBlock(block, fallbackId) {
-  var id = getTrackId(block) || fallbackId;
+function parseTrackRow(row) {
+  var id = getTrackId(row);
 
   if (!id) {
     return null;
   }
 
-  var track = {
+  var name = getTrackName(row);
+  var artists = getArtistName(row);
+  var albumName = getAlbumName(row);
+  var coverUrl = getCoverUrl(row);
+
+  if (!name) {
+    name = "Bugs Track " + id;
+  }
+
+  return {
     id: String(id),
-    name: getTrackName(block),
-    artists: getArtistName(block),
-    album_name: getAlbumName(block),
-    cover_url: getCoverUrl(block)
+    name: name,
+    artists: artists,
+    album_name: albumName,
+    cover_url: coverUrl
   };
-
-  if (!track.name) {
-    track.name = "Bugs Track " + String(id);
-  }
-
-  return track;
 }
 
-function addTrack(tracks, seen, track, limit) {
-  if (!track || !track.id) {
-    return;
-  }
-
-  var id = String(track.id);
-
-  if (seen[id]) {
-    return;
-  }
-
-  if (tracks.length >= limit) {
-    return;
-  }
-
-  seen[id] = true;
-  tracks.push(track);
-}
-
-function parseTracks(html, limit) {
+function parseTracks(html) {
   var tracks = [];
   var seen = {};
-  var source = String(html || "");
 
-  if (!source) {
+  if (!html) {
     return tracks;
   }
 
-  var max = limit || MAX_SEARCH_TRACKS;
-  var blocks = [];
-
-  blocks = source.match(/<tr[\s\S]*?<\/tr>/gi) || [];
-
-  for (var i = 0; i < blocks.length; i++) {
-    addTrack(
-      tracks,
-      seen,
-      parseTrackBlock(blocks[i]),
-      max
-    );
-  }
-
-  var itemBlocks = source.match(
-    /<(?:li|article|div)[^>]*(?:track|song|album|music)[^>]*>[\s\S]*?<\/(?:li|article|div)>/gi
+  var rows = html.match(
+    /<tr[^>]*>[\s\S]*?<\/tr>/gi
   ) || [];
 
-  for (var j = 0; j < itemBlocks.length; j++) {
-    addTrack(
-      tracks,
-      seen,
-      parseTrackBlock(itemBlocks[j]),
-      max
-    );
-  }
+  for (var i = 0; i < rows.length; i++) {
+    var track = parseTrackRow(rows[i]);
 
-  var idMatches = [];
-  var idPattern = /(?:data-track-id|data-trackid|trackId|trackid|trackNo|trackno|songId|songid|\/track\/)\s*["':=\/]?\s*(\d+)/gi;
-  var match;
-
-  while ((match = idPattern.exec(source)) !== null) {
-    idMatches.push(match[1]);
-  }
-
-  for (var k = 0; k < idMatches.length; k++) {
-    var trackId = idMatches[k];
-    var position = source.indexOf(trackId);
-
-    if (position < 0) {
+    if (!track || !track.id) {
       continue;
     }
 
-    var start = Math.max(0, position - 1800);
-    var end = Math.min(source.length, position + 1800);
-    var nearby = source.substring(start, end);
+    if (seen[track.id]) {
+      continue;
+    }
 
-    addTrack(
-      tracks,
-      seen,
-      parseTrackBlock(nearby, trackId),
-      max
-    );
+    seen[track.id] = true;
+    tracks.push(track);
+  }
+
+  if (tracks.length === 0) {
+    var listItems = html.match(
+      /<li[^>]*>[\s\S]*?<\/li>/gi
+    ) || [];
+
+    for (var j = 0; j < listItems.length; j++) {
+      var listTrack = parseTrackRow(listItems[j]);
+
+      if (!listTrack || !listTrack.id) {
+        continue;
+      }
+
+      if (seen[listTrack.id]) {
+        continue;
+      }
+
+      seen[listTrack.id] = true;
+      tracks.push(listTrack);
+    }
+  }
+
+  if (tracks.length === 0) {
+    var divBlocks = html.match(
+      /<div[^>]*>[\s\S]*?<\/div>/gi
+    ) || [];
+
+    for (var k = 0; k < divBlocks.length; k++) {
+      var divTrack = parseTrackRow(divBlocks[k]);
+
+      if (!divTrack || !divTrack.id) {
+        continue;
+      }
+
+      if (seen[divTrack.id]) {
+        continue;
+      }
+
+      seen[divTrack.id] = true;
+      tracks.push(divTrack);
+    }
   }
 
   return tracks;
@@ -311,17 +258,26 @@ function makeTrackResult(track) {
   };
 }
 
-function fetchText(url) {
-  return fetch(url)
-    .then(function(response) {
-      return response.text();
-    });
+function makeSection(uri, title, tracks) {
+  return {
+    uri: uri,
+    title: title,
+    items: (tracks || []).map(makeTrackResult)
+  };
+}
+
+function fetchHtml(url) {
+  return fetch(url).then(function(response) {
+    if (!response || !response.ok) {
+      throw new Error("Bugs HTTP error: " + url);
+    }
+
+    return response.text();
+  });
 }
 
 function searchTracks(query) {
-  var value = String(query || "").trim();
-
-  if (!value) {
+  if (!query || !String(query).trim()) {
     return {
       success: true,
       tracks: []
@@ -331,11 +287,11 @@ function searchTracks(query) {
   var url =
     BASE_URL +
     "/search/track?q=" +
-    encodeURIComponent(value);
+    encodeURIComponent(String(query).trim());
 
-  return fetchText(url)
+  return fetchHtml(url)
     .then(function(html) {
-      var tracks = parseTracks(html, MAX_SEARCH_TRACKS);
+      var tracks = parseTracks(html);
 
       return {
         success: true,
@@ -353,7 +309,7 @@ function searchTracks(query) {
 
 function getTrack(trackId) {
   var id = String(trackId || "")
-    .replace(/^bugs:track:/i, "")
+    .replace("bugs:track:", "")
     .trim();
 
   if (!id) {
@@ -363,9 +319,11 @@ function getTrack(trackId) {
     };
   }
 
-  return fetchText(BASE_URL + "/track/" + id)
+  var url = BASE_URL + "/track/" + id;
+
+  return fetchHtml(url)
     .then(function(html) {
-      var tracks = parseTracks(html, 5);
+      var tracks = parseTracks(html);
       var track = tracks.length > 0 ? tracks[0] : null;
 
       if (!track) {
@@ -392,56 +350,54 @@ function getTrack(trackId) {
 }
 
 function getChartTracks() {
-  var urls = [
-    BASE_URL + "/chart/track/realtime/total",
-    BASE_URL + "/chart",
-    BASE_URL + "/newest"
-  ];
+  var url = BASE_URL + "/chart/track/realtime/total";
 
-  function tryNext(index) {
-    if (index >= urls.length) {
-      return Promise.resolve([]);
+  return fetchHtml(url).then(function(html) {
+    var tracks = parseTracks(html);
+
+    if (!tracks.length) {
+      throw new Error("Bugs chart returned zero tracks");
     }
 
-    return fetchText(urls[index])
-      .then(function(html) {
-        var tracks = parseTracks(html, MAX_HOME_TRACKS);
-
-        if (tracks.length > 0) {
-          return tracks;
-        }
-
-        return tryNext(index + 1);
-      })
-      .catch(function() {
-        return tryNext(index + 1);
-      });
-  }
-
-  return tryNext(0);
+    return tracks;
+  });
 }
 
-function makeSection(uri, title, tracks) {
-  var items = (tracks || []).map(makeTrackResult);
+function getLatestTracks() {
+  var url = BASE_URL + "/newest/track";
 
-  return {
-    uri: uri,
-    title: title,
-    items: items
-  };
+  return fetchHtml(url).then(function(html) {
+    return parseTracks(html);
+  });
 }
 
 function getHomeFeed() {
-  return getChartTracks()
-    .then(function(tracks) {
+  return Promise.all([
+    getChartTracks(),
+    getLatestTracks()
+  ])
+    .then(function(results) {
+      var chartTracks = results[0] || [];
+      var latestTracks = results[1] || [];
+
       var sections = [];
 
-      if (tracks && tracks.length > 0) {
+      if (chartTracks.length > 0) {
         sections.push(
           makeSection(
             "bugs:chart:realtime",
             "벅스 실시간 차트",
-            tracks
+            chartTracks
+          )
+        );
+      }
+
+      if (latestTracks.length > 0) {
+        sections.push(
+          makeSection(
+            "bugs:latest",
+            "벅스 최신음악",
+            latestTracks
           )
         );
       }
@@ -454,10 +410,10 @@ function getHomeFeed() {
     })
     .catch(function(error) {
       return {
-        success: true,
+        success: false,
+        error: String(error),
         greeting: "Bugs Music",
-        sections: [],
-        error: String(error)
+        sections: []
       };
     });
 }
