@@ -1,15 +1,22 @@
 {
   "version": 1,
-  "updated_at": "2026-09-11T00:00:00Z",
+  "updated_at": "2026-09-12T00:00:00Z",
   "extensions": [
     {
       "id": "bugs-music",
       "name": "bugs-music",
       "display_name": "Bugs Music",
-      "version": "1.0.3",
-      "description": "Bugs Music metadata and home feed provider for SpotiFLAC Mobile.",
+      "version": "1.0.4",
+      "description": "Bugs Music metadata provider with Bugs TOP100 home feed for SpotiFLAC Mobile.",
       "download_url": "https://raw.githubusercontent.com/ldw0403-netizen/Bugs-Music-SpotiFLAC/main/bugs-music.spotiflac-ext",
       "category": "metadata_provider",
+      "tags": [
+        "bugs",
+        "metadata",
+        "search",
+        "homefeed",
+        "top100"
+      ],
       "min_app_version": "4.9.1"
     }
   ]
