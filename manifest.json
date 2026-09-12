@@ -1,8 +1,8 @@
 {
   "name": "bugs-music",
   "displayName": "Bugs Music",
-  "version": "1.0.7",
-  "description": "Bugs Music metadata search and home feed with charts, latest music, categories and cover images.",
+  "version": "1.0.8",
+  "description": "Bugs Music metadata search and home feed with chart tracks and cover images.",
   "author": "ldw0403",
   "homepage": "https://github.com/ldw0403-netizen/Bugs-Music-SpotiFLAC",
   "type": [
