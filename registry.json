@@ -4,10 +4,13 @@
     {
       "id": "bugs-music",
       "name": "Bugs Music",
+      "display_name": "Bugs Music",
       "version": "1.1.2",
-      "displayName": "Bugs Music",
-      "file": "extensions/bugs-music.spotiflac-ext",
-      "icon": "icons/bugs-music.png"
+      "description": "Bugs Music 검색 및 공개 홈피드",
+      "download_url": "https://raw.githubusercontent.com/ldw0403-netizen/Bugs-Music-SpotiFLAC/main/extensions/bugs-music.spotiflac-ext",
+      "icon_url": "https://raw.githubusercontent.com/ldw0403-netizen/Bugs-Music-SpotiFLAC/main/icons/bugs-music.png",
+      "sha256": "94a254ffbf30407acea8669677a0ff258bbb5fb54211ab45be4ab428b3aeb218",
+      "min_app_version": "4.7.0"
     }
   ]
 }
