@@ -6,9 +6,18 @@
   "author": "ldw0403-netizen",
   "homepage": "https://github.com/ldw0403-netizen/Bugs-Music-SpotiFLAC",
   "icon": "icon.png",
-  "permissions": {"network": ["music.bugs.co.kr", "image.bugsm.co.kr"]},
-  "type": ["metadata_provider"],
-  "capabilities": {"homeFeed": true},
+  "permissions": {
+    "network": [
+      "music.bugs.co.kr",
+      "image.bugsm.co.kr"
+    ]
+  },
+  "type": [
+    "metadata_provider"
+  ],
+  "capabilities": {
+    "homeFeed": true
+  },
   "skipMetadataEnrichment": false,
   "skipBuiltInFallback": false
 }
