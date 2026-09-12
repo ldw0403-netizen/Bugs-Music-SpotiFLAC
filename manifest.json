@@ -1,8 +1,8 @@
 {
   "name": "bugs-music",
   "displayName": "Bugs Music",
-  "version": "1.0.5",
-  "description": "Bugs Music metadata provider with Bugs TOP100 home feed for SpotiFLAC Mobile.",
+  "version": "1.0.6",
+  "description": "Bugs Music metadata provider and home feed.",
   "author": "ldw0403",
   "homepage": "https://github.com/ldw0403-netizen/Bugs-Music-SpotiFLAC",
   "type": [
