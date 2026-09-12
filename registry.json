@@ -6,20 +6,23 @@
       "id": "bugs-music",
       "name": "bugs-music",
       "display_name": "Bugs Music",
-      "version": "1.0.8",
-      "description": "Bugs Music metadata search and home feed with chart tracks and cover images.",
-      "download_url": "https://raw.githubusercontent.com/ldw0403-netizen/Bugs-Music-SpotiFLAC/main/bugs-music.spotiflac-ext",
-      "category": "metadata_provider",
+      "version": "1.0.9",
+      "description": "Bugs Music 검색, 메타데이터 및 Spotify 스타일 홈피드 확장. 벅스 실시간 차트와 최신음악을 제공합니다.",
+      "download_url": "https://raw.githubusercontent.com/ldw0403/SpotiFLAC-Extension/main/extensions/bugs-music.sflx",
+      "icon_url": "https://raw.githubusercontent.com/ldw0403/SpotiFLAC-Extension/main/icons/bugs-music.png",
+      "category": "integration",
       "tags": [
         "bugs",
+        "벅스",
+        "korean",
         "metadata",
         "search",
         "homefeed",
-        "chart",
-        "top100",
-        "latest"
+        "chart"
       ],
-      "min_app_version": "4.9.1"
+      "downloads": 0,
+      "updated_at": "2026-09-13T00:00:00Z",
+      "min_app_version": "4.7.0"
     }
   ]
 }
